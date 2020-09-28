@@ -1,18 +1,20 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useHistory } from 'react-router';
 
 import { useAuth } from '../../providers/Auth';
-import './Login.styles.css';
 
 function LoginPage() {
-  const { login } = useAuth();
+  const { login, authenticated } = useAuth();
   const history = useHistory();
-
   function authenticate(event) {
     event.preventDefault();
-    login();
-    history.push('/secret');
+    login(event.target.username.value, event.target.password.value);
   }
+  useEffect(() => {
+    if (authenticated) {
+      history.push('/');
+    }
+  });
 
   return (
     <section className="login">
