@@ -42,7 +42,7 @@ const VideoPage = () => {
     } else {
       getRelatedVideos(videoId);
     }
-  }, [videos]);
+  }, [videos, videoId, getRelatedVideos]);
 
   return (
     <>

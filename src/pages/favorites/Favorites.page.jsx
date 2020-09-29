@@ -35,7 +35,7 @@ const FavoritesPage = () => {
     } else if ('favorites' in loggedUser) {
       getVideosById(...loggedUser.favorites);
     }
-  }, [videos, loggedUser.favorites]);
+  }, [videos, loggedUser, loggedUser.favorites, getVideosById]);
   return (
     <>
       {authenticated ? (

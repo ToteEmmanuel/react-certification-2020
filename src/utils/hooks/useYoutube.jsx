@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { DEFAULT_YOUTUBE_API } from '../constants';
 
 async function callYoutube(params) {
@@ -28,31 +28,45 @@ function useYoutube() {
   const [response, setResponse] = useState([]);
   const [nextPage, setNextPage] = useState('');
 
-  const getYoutubeSearch = (searchValue) => {
-    const newParams = { ...params, q: searchValue };
-    delete newParams.pageToken;
-    setParams(newParams);
-  };
+  const getYoutubeSearch = useCallback(
+    (searchValue) => {
+      setParams((p) => {
+        const newParams = { ...p, q: searchValue };
+        delete newParams.pageToken;
+        return newParams;
+      });
+    },
+    [setParams]
+  );
 
-  const getMoreVideos = (nextPageId) => {
-    const newParams = { ...params, pageToken: nextPageId };
-    setParams(newParams);
-  };
+  const getMoreVideos = useCallback(
+    (nextPageId) => {
+      setParams((p) => ({ ...p, pageToken: nextPageId }));
+    },
+    [setParams]
+  );
 
-  const getRelatedVideos = (videoId) => {
-    const newParams = { ...params, relatedToVideoId: videoId, type: 'video' };
-    delete newParams.pageToken;
-    delete newParams.q;
-    setParams(newParams);
-  };
+  const getRelatedVideos = useCallback(
+    (videoId) => {
+      setParams((p) => {
+        const newParams = { ...p, relatedToVideoId: videoId, type: 'video' };
+        delete newParams.pageToken;
+        delete newParams.q;
+        return newParams;
+      });
+    },
+    [setParams]
+  );
 
-  const getVideosById = (...args) => {
-    const ids = args.join(',');
-    if (ids) {
-      const newParams = { ...params, id: ids };
-      setParams(newParams);
-    }
-  };
+  const getVideosById = useCallback(
+    (...args) => {
+      const ids = args.join(',');
+      if (ids) {
+        setParams((p) => ({ ...p, id: ids }));
+      }
+    },
+    [setParams]
+  );
 
   useEffect(() => {
     const updateResponse = async () => {
@@ -65,10 +79,10 @@ function useYoutube() {
         console.log(`Issues Performing youtube request:  ${error}`);
       }
       if ('items' in videos && 'pageToken' in params) {
-        setResponse([
-          ...response,
+        setResponse((resp) => [
+          ...resp,
           ...videos.items.filter(
-            (v) => response.findIndex((r) => r.id.videoId === v.id.videoId) === -1
+            (v) => resp.findIndex((r) => r.id.videoId === v.id.videoId) === -1
           ),
         ]);
       } else {
@@ -77,7 +91,14 @@ function useYoutube() {
       setNextPage(videos.nextPageToken || '');
     };
     updateResponse();
-  }, [params.q, params.pageToken, params.relatedToVideoId, params.id]);
+  }, [
+    params,
+    params.q,
+    params.pageToken,
+    params.relatedToVideoId,
+    params.id,
+    setResponse,
+  ]);
 
   return {
     response,
