@@ -1,33 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
-import { DEFAULT_YOUTUBE_API } from '../constants';
-
-async function callYoutube(params) {
-  if (
-    !('q' in params || !params.q) ||
-    !('relatedToVideoId' in params || !params.relatedToVideoId) ||
-    !('id' in params || !params.id)
-  ) {
-    console.log('Empty search');
-    return {};
-  }
-  let url;
-  if ('id' in params) {
-    url = new URL(`${process.env.REACT_APP_YOUTUBE_URL}videos`);
-  } else {
-    url = new URL(`${process.env.REACT_APP_YOUTUBE_URL}search`);
-  }
-  console.log(`Looking for ${params.q}.`);
-  url.search = new URLSearchParams(params).toString();
-  const resp = await fetch(url);
-  return resp.json();
-  // console.log(params);
-}
+import callYoutube from '../../api/youtube.api';
+import { DEFAULT_YOUTUBE_API, VIDEO_RESPONSE_TYPE_STR } from '../constants';
 
 function useYoutube() {
   const [params, setParams] = useState({ ...DEFAULT_YOUTUBE_API });
   const [response, setResponse] = useState([]);
   const [nextPage, setNextPage] = useState('');
-
+  /**
+   * Updating the searchValue will generate a call to the useEffect element in this hook.
+   * @param {searchValue} value to perform a new search against youtube.
+   */
   const getYoutubeSearch = useCallback(
     (searchValue) => {
       setParams((p) => {
@@ -38,14 +20,22 @@ function useYoutube() {
     },
     [setParams]
   );
-
+  /**
+   * Updating the next page id will generate a call to the useEffect element in this hook.
+   * there is a requirement for a search to have been made before for this value to have an
+   * effect.
+   * @param {nextPageId} next page id for the next search
+   */
   const getMoreVideos = useCallback(
     (nextPageId) => {
       setParams((p) => ({ ...p, pageToken: nextPageId }));
     },
     [setParams]
   );
-
+  /**
+   * Updating the id will generate a call to the useEffect element in this hook.
+   * @param {videoId} id of video for next search
+   */
   const getRelatedVideos = useCallback(
     (videoId) => {
       setParams((p) => {
@@ -57,7 +47,10 @@ function useYoutube() {
     },
     [setParams]
   );
-
+  /**
+   * Updating the list of ids will generate a call to the useEffect element in this hook.
+   * @param {...args} list of ids for next search
+   */
   const getVideosById = useCallback(
     (...args) => {
       const ids = args.join(',');
@@ -68,27 +61,46 @@ function useYoutube() {
     [setParams]
   );
 
+  /**
+   * Will filter a list of results from the youtube api to only include video responses
+   * where video->id->kind or video->kind match the value of VIDEO_RESPONSE_TYPE_STR.
+   * @param {videoList} List of videos to filter.
+   */
+  const filterOtherKind = (videoList) => {
+    return videoList.filter(
+      (v) => v.kind === VIDEO_RESPONSE_TYPE_STR || v.id.kind === VIDEO_RESPONSE_TYPE_STR
+    );
+  };
+
+  /**
+   * Use effect function that will trigger a query to the youtube api,
+   * the dependencies are the different parameters that can be updated to
+   * perform a new query.
+   * The response of this element is set in the response state.
+   */
   useEffect(() => {
     const updateResponse = async () => {
-      let videos = {};
       try {
         if ('q' in params || 'relatedToVideoId' in params || 'id' in params) {
-          videos = await callYoutube(params);
+          const apiResponse = await callYoutube(params);
+          apiResponse.json().then((youtubeResponse) => {
+            setNextPage(youtubeResponse.nextPageToken || '');
+            const videoItems = filterOtherKind(youtubeResponse.items || []);
+            if ('pageToken' in params) {
+              setResponse((resp) => [
+                ...resp,
+                ...videoItems.filter(
+                  (v) => resp.findIndex((r) => r.id.videoId === v.id.videoId) === -1
+                ),
+              ]);
+            } else {
+              setResponse(videoItems);
+            }
+          });
         }
       } catch (error) {
         console.log(`Issues Performing youtube request:  ${error}`);
       }
-      if ('items' in videos && 'pageToken' in params) {
-        setResponse((resp) => [
-          ...resp,
-          ...videos.items.filter(
-            (v) => resp.findIndex((r) => r.id.videoId === v.id.videoId) === -1
-          ),
-        ]);
-      } else {
-        setResponse(videos.items || []);
-      }
-      setNextPage(videos.nextPageToken || '');
     };
     updateResponse();
   }, [
