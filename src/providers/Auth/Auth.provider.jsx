@@ -27,7 +27,6 @@ function AuthProvider({ children }) {
   const login = useCallback((username, pass) => {
     const auth = loginApi(username, pass);
     auth.then((v) => {
-      console.log(`Authentication ${v}`);
       let user = {};
       if (v) {
         user = { username };

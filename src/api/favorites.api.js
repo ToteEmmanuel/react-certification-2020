@@ -7,7 +7,7 @@ const getFavorites = (username) => {
   return new Promise((resolve) => {
     setTimeout(() => {
       const [favs] = mockedFavorites.filter((f) => f.username === username);
-      if ('favorites' in favs) {
+      if (favs && 'favorites' in favs) {
         return resolve(favs);
       }
       return resolve({ username, favorites: [] });

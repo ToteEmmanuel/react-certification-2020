@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import callYoutube from '../../api/youtube.api';
+import youtubeAPI from '../../api/youtube.api';
 import { DEFAULT_YOUTUBE_API, VIDEO_RESPONSE_TYPE_STR } from '../constants';
 
 function useYoutube() {
@@ -12,11 +12,7 @@ function useYoutube() {
    */
   const getYoutubeSearch = useCallback(
     (searchValue) => {
-      setParams((p) => {
-        const newParams = { ...p, q: searchValue };
-        delete newParams.pageToken;
-        return newParams;
-      });
+      setParams(() => ({ ...DEFAULT_YOUTUBE_API, q: searchValue }));
     },
     [setParams]
   );
@@ -38,12 +34,11 @@ function useYoutube() {
    */
   const getRelatedVideos = useCallback(
     (videoId) => {
-      setParams((p) => {
-        const newParams = { ...p, relatedToVideoId: videoId, type: 'video' };
-        delete newParams.pageToken;
-        delete newParams.q;
-        return newParams;
-      });
+      setParams(() => ({
+        ...DEFAULT_YOUTUBE_API,
+        relatedToVideoId: videoId,
+        type: 'video',
+      }));
     },
     [setParams]
   );
@@ -82,7 +77,7 @@ function useYoutube() {
     const updateResponse = async () => {
       try {
         if ('q' in params || 'relatedToVideoId' in params || 'id' in params) {
-          const apiResponse = await callYoutube(params);
+          const apiResponse = await youtubeAPI.callYoutube(params);
           apiResponse.json().then((youtubeResponse) => {
             setNextPage(youtubeResponse.nextPageToken || '');
             const videoItems = filterOtherKind(youtubeResponse.items || []);
@@ -103,14 +98,7 @@ function useYoutube() {
       }
     };
     updateResponse();
-  }, [
-    params,
-    params.q,
-    params.pageToken,
-    params.relatedToVideoId,
-    params.id,
-    setResponse,
-  ]);
+  }, [params, setResponse]);
 
   return {
     response,

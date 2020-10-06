@@ -27,7 +27,7 @@ function Layout({ children }) {
   return (
     <StyledDiv>
       <HeaderArea />
-      <Content>{children}</Content>
+      <Content data-testid="content">{children}</Content>
     </StyledDiv>
   );
 }

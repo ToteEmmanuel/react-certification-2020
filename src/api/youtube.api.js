@@ -2,11 +2,11 @@
  * Calls the youtube api service v3
  * @param {Object} params Containing the values that are going to be used as URL Search params for the youtube api request.
  */
-export default async function callYoutube(params) {
+const callYoutube = async (params) => {
   if (
-    !('q' in params || !params.q) ||
-    !('relatedToVideoId' in params || !params.relatedToVideoId) ||
-    !('id' in params || !params.id)
+    !('q' in params && params.q) &&
+    !('relatedToVideoId' in params && params.relatedToVideoId) &&
+    !('id' in params && params.id)
   ) {
     return {};
   }
@@ -18,4 +18,6 @@ export default async function callYoutube(params) {
   }
   url.search = new URLSearchParams(params).toString();
   return fetch(url);
-}
+};
+
+export default { callYoutube };

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Switch, Route } from 'react-router-dom';
+import { BrowserRouter, Switch, Route, Redirect } from 'react-router-dom';
 import GlobalStyle from '../GlobalStyle';
 import HomePage from '../../pages/Home';
 import NotFound from '../../pages/NotFound';
@@ -15,6 +15,9 @@ function App() {
       <Layout>
         <Switch>
           <Route exact path="/">
+            <Redirect to="/home" />
+          </Route>
+          <Route path="/home">
             <HomePage />
           </Route>
           <Route path="/login">
